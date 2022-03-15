@@ -12,15 +12,15 @@ contract Swapper is Initializable {
         swapRouter = _swapRouter;
     }
 
-    function swapETHForTokens(
+    function _swapETHForTokens(
         uint256 amountIn,
         uint amountOutMin,
         address tokenAddress
-    ) external {
+    ) internal {
         address[] memory path = new address[](2);
         path[0] = tokenAddress;
         path[1] = swapRouter.WETH();
-        swapRouter.swapExactETHForTokens(
+        swapRouter.swapExactETHForTokens{value: amountIn}(
             amountOutMin,
             path,
             msg.sender,
