@@ -42,7 +42,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  describe("SwapETHforTokens assertions", ()=>{
+  xdescribe("SwapETHforTokens assertions", ()=>{
     let ethSent = ethers.utils.parseEther("1");
     let minTokenExpected = ethers.utils.parseEther("2300");
 
@@ -59,7 +59,18 @@ describe("Swapper", ()=> {
   });
 
   describe("swapMultipleTokens assertions", ()=> {
-    it("Should swap all the tokens", async ()=> {
+    it("Should not allow to swap tokens if the arguments sizes are invalid", async()=> {
+      await expect(swapper.swapMultipleTokens(
+        [LINK_ADDRESS, DAI_ADDRESS],
+        [20, 40, 40],
+        [PriceInLink]
+      ))
+      .to
+      .be
+      .revertedWith("Arguments arrays must have equal size");
+    });
+
+    xit("Should allow to swap all the tokens", async ()=> {
       let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
       let prices = [PriceInDai, PriceInLink, PriceInUni];
       let percents = [20, 50, 30];
