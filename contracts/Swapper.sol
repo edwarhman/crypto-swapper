@@ -12,6 +12,25 @@ contract Swapper is Initializable {
         swapRouter = _swapRouter;
     }
 
+    function swapMultipleTokens(
+        address[] memory tokensAddresses,
+        uint[] memory tokensPercents,
+        uint[] memory tokensPrices
+    ) external
+    payable {
+        for(uint i; i < tokensAddresses.length; i++) {
+            address token = tokensAddresses[i];
+            uint percent = tokensPercents[i];
+            uint amountIn = msg.value * percent / 100 ;
+            uint amountOutMin = amountIn * tokensPrices[i] / (1 ether); 
+            _swapETHForTokens(
+                amountIn,
+                amountOutMin,
+                token
+            );
+        }
+    }
+
     function _swapETHForTokens(
         uint256 amountIn,
         uint amountOutMin,
