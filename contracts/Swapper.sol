@@ -18,8 +18,8 @@ contract Swapper is Initializable {
         address tokenAddress
     ) internal {
         address[] memory path = new address[](2);
-        path[0] = tokenAddress;
-        path[1] = swapRouter.WETH();
+        path[0] = swapRouter.WETH();
+        path[1] = tokenAddress;
         swapRouter.swapExactETHForTokens{value: amountIn}(
             amountOutMin,
             path,
