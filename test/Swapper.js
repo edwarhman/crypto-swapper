@@ -42,7 +42,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  xdescribe("SwapETHforTokens assertions", ()=>{
+  describe("SwapETHforTokens assertions", ()=>{
     let ethSent = ethers.utils.parseEther("1");
     let minTokenExpected = ethers.utils.parseEther("2300");
 
@@ -58,7 +58,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  describe("swapMultipleTokens assertions", ()=> {
+  xdescribe("swapMultipleTokens assertions", ()=> {
     let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
     let prices = [PriceInDai, PriceInLink, PriceInUni];
     let percents = [20, 50, 30];
@@ -134,7 +134,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  describe("Set fee and recipient assertions", ()=> {
+  xdescribe("Set fee and recipient assertions", ()=> {
     it("Should allow only the admin to set the fee", async()=> {
       await expect(swapper.connect(user).setFee(20))
       .to

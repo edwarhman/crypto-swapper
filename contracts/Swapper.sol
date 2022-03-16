@@ -14,6 +14,12 @@ contract Swapper is Initializable, AccessControlUpgradeable {
     ///@notice Role required to manipulate admin functions
     bytes32 public constant ADMIN = keccak256("ADMIN");
 
+    event EthSwapped (
+        uint ethAmount,
+        uint tokenAmount,
+        address tokenAddress
+    );
+
     function initialize(
         IUniswapV2Router01 _swapRouter,
         uint _fee,
@@ -72,13 +78,21 @@ contract Swapper is Initializable, AccessControlUpgradeable {
         address tokenAddress
     ) internal {
         address[] memory path = new address[](2);
+        uint [] memory amounts;
         path[0] = swapRouter.WETH();
         path[1] = tokenAddress;
-        swapRouter.swapExactETHForTokens{value: amountIn}(
+
+        amounts = swapRouter.swapExactETHForTokens{value: amountIn}(
             amountOutMin,
             path,
             msg.sender,
             block.timestamp
+        );
+
+        emit EthSwapped(
+            amounts[0],
+            amounts[1],
+            tokenAddress
         );
     }
 
@@ -98,7 +112,6 @@ contract Swapper is Initializable, AccessControlUpgradeable {
     function _chargeFee(
         uint toCharge
     ) internal {
-        console.log("current funds: %s", address(this).balance);
         (bool fe,) = payable(recipient).call{value: toCharge}("");
         require(fe, "ETH was not sent to recipient");
     }
