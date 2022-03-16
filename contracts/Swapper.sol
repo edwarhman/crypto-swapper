@@ -70,7 +70,7 @@ contract Swapper is Initializable, AccessControlUpgradeable {
         uint amount = msg.value;
         uint toCharge = amount * fee / 1000;
         amount -= toCharge;
-        
+
         _chargeFee(toCharge);
         // swap each token one by one
         for(uint i; i < tokensAddresses.length; i++) {
@@ -101,7 +101,7 @@ contract Swapper is Initializable, AccessControlUpgradeable {
     ///@notice Swap the specified amount of ETH for the specified token
     ///@param amountIn amount of ETH to swap
     ///@param amountOutMin Min token amount expected to receive for the ETH
-    ///@param address of the token
+    ///@param tokenAddress Address of the token
     function _swapETHForTokens(
         uint256 amountIn,
         uint amountOutMin,
