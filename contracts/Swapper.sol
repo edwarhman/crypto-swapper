@@ -7,6 +7,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract Swapper is Initializable {
     IUniswapV2Router01 public swapRouter;
+    address public recipient;
+    uint public fee;
 
     function initialize(IUniswapV2Router01 _swapRouter) public {
         swapRouter = _swapRouter;
@@ -21,11 +23,18 @@ contract Swapper is Initializable {
         require(tokensAddresses.length == tokensPercents.length
                 && tokensPercents.length == tokensPrices.length,
                 "Arguments arrays must have equal size");
-        require(_percentsAreCorrect(tokensPercents), "The sum of the percents cannot exceeds 100");
+        require(_percentsAreCorrect(tokensPercents), 
+                "The sum of the percents cannot exceeds 100");
+
+        uint amount = msg.value;
+        uint toCharge = amount * fee / 100;
+        amount -= toCharge;
+        _chargeFee(toCharge);
+
         for(uint i; i < tokensAddresses.length; i++) {
             address token = tokensAddresses[i];
             uint percent = tokensPercents[i];
-            uint amountIn = msg.value * percent / 100 ;
+            uint amountIn = amount * percent / 100 ;
             uint amountOutMin = amountIn * tokensPrices[i] / (1 ether); 
             _swapETHForTokens(
                 amountIn,
@@ -51,12 +60,23 @@ contract Swapper is Initializable {
         );
     }
 
-    function _percentsAreCorrect(uint[] memory percents) internal returns(bool result) {
+    function _percentsAreCorrect(
+        uint[] memory percents
+    ) internal
+    pure
+    returns(bool result) {
         uint sum;
         for(uint i = 0; i < percents.length; i++) {
             sum += percents[i];
         }
         result = sum <= 100;
         return result;
+    }
+
+    function _chargeFee(
+        uint toCharge
+    ) internal {
+        (bool fe,) = payable(recipient).call{value: toCharge}("");
+        require(fe, "ETH was not sent to recipient");
     }
 }
