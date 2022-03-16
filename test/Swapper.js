@@ -16,9 +16,9 @@ describe("Swapper", ()=> {
   const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
   const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
   // ether prices in different tokens
-  let PriceInDai = ethers.utils.parseEther("2618.12");
-  let PriceInLink = ethers.utils.parseEther("190");
-  let PriceInUni = ethers.utils.parseEther("300");
+  let PriceInDai = ethers.utils.parseEther("2400");
+  let PriceInLink = ethers.utils.parseEther("150");
+  let PriceInUni = ethers.utils.parseEther("200");
 
 
   before(async ()=> {
@@ -63,7 +63,7 @@ describe("Swapper", ()=> {
     let prices = [PriceInDai, PriceInLink, PriceInUni];
     let percents = [20, 50, 30];
 
-    xit("Should not allow to swap tokens if the arguments sizes are invalid", async()=> {
+    it("Should not allow to swap tokens if the arguments sizes are invalid", async()=> {
       await expect(swapper.swapMultipleTokens(
         [LINK_ADDRESS, DAI_ADDRESS],
         [20, 40, 40],
@@ -74,7 +74,7 @@ describe("Swapper", ()=> {
       .revertedWith("Arguments arrays must have equal size");
     });
 
-    xit("Should not allow to swap tokens if the sum of the specified percents exceeds 100%", async()=> {
+    it("Should not allow to swap tokens if the sum of the specified percents exceeds 100%", async()=> {
       await expect(swapper.swapMultipleTokens(
         [LINK_ADDRESS, DAI_ADDRESS],
         [50, 70],
@@ -85,7 +85,7 @@ describe("Swapper", ()=> {
       .revertedWith("The sum of the percents cannot exceeds 100");
     })
 
-    xit("Should allow to swap all the tokens", async ()=> {
+    it("Should allow to swap all the tokens", async ()=> {
       await swapper.swapMultipleTokens(
         addresses,
         percents,
@@ -105,7 +105,7 @@ describe("Swapper", ()=> {
 
     });
 
-    xit("Should pay the recipient the correct fee per transaction", async ()=> {
+    it("Should pay the recipient the correct fee per transaction", async ()=> {
       let prevBalance = await provider.getBalance(user.address);
 
       await swapper.swapMultipleTokens(
@@ -124,7 +124,7 @@ describe("Swapper", ()=> {
       await swapper.swapMultipleTokens(
         [LINK_ADDRESS],
         [100],
-        [0],
+        [PriceInLink],
         {value: ethers.utils.parseEther("1")}
       );
 
@@ -133,5 +133,33 @@ describe("Swapper", ()=> {
       .equal(0);
     });
   });
+
+  describe("Set fee and recipient assertions", ()=> {
+    it("Should allow only the admin to set the fee", async()=> {
+      await expect(swapper.connect(user).setFee(20))
+      .to
+      .be
+      .revertedWith("");
+
+      await swapper.setFee(50);
+
+      expect(await swapper.fee())
+      .to
+      .equal(50);
+    })
+
+    it("Should only allow the admin to set the recipient", async()=> {
+      await expect(swapper.connect(user).setRecipient(dai.address))
+      .to
+      .be
+      .revertedWith("");
+
+      await swapper.setRecipient(owner.address);
+
+      expect(await swapper.recipient())
+      .to
+      .equal(owner.address);
+    });
+  })
 
 });
