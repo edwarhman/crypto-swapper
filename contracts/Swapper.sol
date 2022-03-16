@@ -4,11 +4,15 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-contract Swapper is Initializable {
+contract Swapper is Initializable, AccessControlUpgradeable {
     IUniswapV2Router01 public swapRouter;
     uint public fee;
     address public recipient;
+
+    ///@notice Role required to manipulate admin functions
+    bytes32 public constant ADMIN = keccak256("ADMIN");
 
     function initialize(
         IUniswapV2Router01 _swapRouter,
@@ -19,6 +23,9 @@ contract Swapper is Initializable {
         swapRouter = _swapRouter;
         fee = _fee;
         recipient = _recipient;
+
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(ADMIN, msg.sender);
     }
 
     function swapMultipleTokens(
@@ -49,6 +56,14 @@ contract Swapper is Initializable {
                 token
             );
         }
+    }
+
+    function setRecipient(address _recipient) external onlyRole(ADMIN) {
+        recipient = _recipient;
+    }
+
+    function setFee(uint _fee) external onlyRole(ADMIN) {
+        fee = _fee;
     }
 
     function _swapETHForTokens(
@@ -83,6 +98,7 @@ contract Swapper is Initializable {
     function _chargeFee(
         uint toCharge
     ) internal {
+        console.log("current funds: %s", address(this).balance);
         (bool fe,) = payable(recipient).call{value: toCharge}("");
         require(fe, "ETH was not sent to recipient");
     }
