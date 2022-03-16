@@ -15,4 +15,8 @@ contract SwapperTest is Swapper {
         	tokenAddress
         );
     }
+
+    function chargeFee(uint toCharge) external {
+        _chargeFee(toCharge);
+    }
 }
