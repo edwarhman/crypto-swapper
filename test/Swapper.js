@@ -31,7 +31,7 @@ describe("Swapper", ()=> {
 
   beforeEach(async ()=> {
     [owner, user] = await ethers.getSigners();
-    swapper = await upgrades.deployProxy(Swapper, [router.address]);
+    swapper = await upgrades.deployProxy(Swapper, [router.address, 1, user.address]);
   });
 
   xdescribe("Deployment", ()=> {
@@ -59,6 +59,10 @@ describe("Swapper", ()=> {
   });
 
   describe("swapMultipleTokens assertions", ()=> {
+    let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
+    let prices = [PriceInDai, PriceInLink, PriceInUni];
+    let percents = [20, 50, 30];
+
     it("Should not allow to swap tokens if the arguments sizes are invalid", async()=> {
       await expect(swapper.swapMultipleTokens(
         [LINK_ADDRESS, DAI_ADDRESS],
@@ -82,16 +86,12 @@ describe("Swapper", ()=> {
     })
 
     xit("Should allow to swap all the tokens", async ()=> {
-      let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
-      let prices = [PriceInDai, PriceInLink, PriceInUni];
-      let percents = [20, 50, 30];
-
       await swapper.swapMultipleTokens(
         addresses,
         percents,
         prices,
         {value: ethers.utils.parseEther("10")}
-        );
+      );
 
       expect(await dai.balanceOf(owner.address))
       .to
@@ -103,6 +103,21 @@ describe("Swapper", ()=> {
       .to
       .above(PriceInUni.mul(3));
 
+    });
+
+    it("Should pay the recipient the correct fee per transaction", async ()=> {
+      let prevBalance = await provider.getBalance(user.address);
+
+      await swapper.swapMultipleTokens(
+        [UNI_ADDRESS],
+        [100],
+        [PriceInUni],
+        {value: ethers.utils.parseEther("1")}
+      );
+
+      expect(await provider.getBalance(user.address))
+      .to
+      .equal(prevBalance.add(ethers.utils.parseEther("1").mul("1").div("1000")));
     });
   });
 
