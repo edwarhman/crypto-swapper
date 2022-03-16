@@ -12,6 +12,29 @@ contract Swapper is Initializable {
         swapRouter = _swapRouter;
     }
 
+    function swapMultipleTokens(
+        address[] memory tokensAddresses,
+        uint[] memory tokensPercents,
+        uint[] memory tokensPrices
+    ) external
+    payable {
+        require(tokensAddresses.length == tokensPercents.length
+                && tokensPercents.length == tokensPrices.length,
+                "Arguments arrays must have equal size");
+        require(_percentsAreCorrect(tokensPercents), "The sum of the percents cannot exceeds 100");
+        for(uint i; i < tokensAddresses.length; i++) {
+            address token = tokensAddresses[i];
+            uint percent = tokensPercents[i];
+            uint amountIn = msg.value * percent / 100 ;
+            uint amountOutMin = amountIn * tokensPrices[i] / (1 ether); 
+            _swapETHForTokens(
+                amountIn,
+                amountOutMin,
+                token
+            );
+        }
+    }
+
     function _swapETHForTokens(
         uint256 amountIn,
         uint amountOutMin,
@@ -26,5 +49,14 @@ contract Swapper is Initializable {
             msg.sender,
             block.timestamp
         );
+    }
+
+    function _percentsAreCorrect(uint[] memory percents) internal returns(bool result) {
+        uint sum;
+        for(uint i = 0; i < percents.length; i++) {
+            sum += percents[i];
+        }
+        result = sum <= 100;
+        return result;
     }
 }
