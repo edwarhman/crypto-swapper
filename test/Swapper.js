@@ -63,7 +63,7 @@ describe("Swapper", ()=> {
     let prices = [PriceInDai, PriceInLink, PriceInUni];
     let percents = [20, 50, 30];
 
-    it("Should not allow to swap tokens if the arguments sizes are invalid", async()=> {
+    xit("Should not allow to swap tokens if the arguments sizes are invalid", async()=> {
       await expect(swapper.swapMultipleTokens(
         [LINK_ADDRESS, DAI_ADDRESS],
         [20, 40, 40],
@@ -74,7 +74,7 @@ describe("Swapper", ()=> {
       .revertedWith("Arguments arrays must have equal size");
     });
 
-    it("Should not allow to swap tokens if the sum of the specified percents exceeds 100%", async()=> {
+    xit("Should not allow to swap tokens if the sum of the specified percents exceeds 100%", async()=> {
       await expect(swapper.swapMultipleTokens(
         [LINK_ADDRESS, DAI_ADDRESS],
         [50, 70],
@@ -105,7 +105,7 @@ describe("Swapper", ()=> {
 
     });
 
-    it("Should pay the recipient the correct fee per transaction", async ()=> {
+    xit("Should pay the recipient the correct fee per transaction", async ()=> {
       let prevBalance = await provider.getBalance(user.address);
 
       await swapper.swapMultipleTokens(
@@ -118,6 +118,19 @@ describe("Swapper", ()=> {
       expect(await provider.getBalance(user.address))
       .to
       .equal(prevBalance.add(ethers.utils.parseEther("1").mul("1").div("1000")));
+    });
+
+    it("The contract should not store any funds", async()=> {
+      await swapper.swapMultipleTokens(
+        [LINK_ADDRESS],
+        [100],
+        [0],
+        {value: ethers.utils.parseEther("1")}
+      );
+
+      expect(await provider.getBalance(swapper.address))
+      .to
+      .equal(0);
     });
   });
 
