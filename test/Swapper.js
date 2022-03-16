@@ -34,7 +34,7 @@ describe("Swapper", ()=> {
     swapper = await upgrades.deployProxy(Swapper, [router.address, 1, user.address]);
   });
 
-  xdescribe("Deployment", ()=> {
+  describe("Deployment", ()=> {
     it("Should be initialized correctly", async ()=> {
       expect(await swapper.swapRouter())
       .to
@@ -42,7 +42,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  describe("SwapETHforTokens assertions", ()=>{
+  describe("Private functions assertions", ()=>{
     let ethSent = ethers.utils.parseEther("1");
     let minTokenExpected = ethers.utils.parseEther("2300");
 
@@ -56,9 +56,16 @@ describe("Swapper", ()=> {
       .above(minTokenExpected);
 
     });
+
+    it("Should retrieve if fee charge fails", async()=> {
+      await expect(swapper.chargeFee(ethers.utils.parseEther("1")))
+      .to
+      .be
+      .revertedWith("ETH was not sent to recipient");
+    });
   });
 
-  xdescribe("swapMultipleTokens assertions", ()=> {
+  describe("swapMultipleTokens assertions", ()=> {
     let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
     let prices = [PriceInDai, PriceInLink, PriceInUni];
     let percents = [20, 50, 30];
@@ -134,7 +141,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  xdescribe("Set fee and recipient assertions", ()=> {
+  describe("Set fee and recipient assertions", ()=> {
     it("Should allow only the admin to set the fee", async()=> {
       await expect(swapper.connect(user).setFee(20))
       .to
