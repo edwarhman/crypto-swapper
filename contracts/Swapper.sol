@@ -7,11 +7,18 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract Swapper is Initializable {
     IUniswapV2Router01 public swapRouter;
-    address public recipient;
     uint public fee;
+    address public recipient;
 
-    function initialize(IUniswapV2Router01 _swapRouter) public {
+    function initialize(
+        IUniswapV2Router01 _swapRouter,
+        uint _fee,
+        address _recipient
+    ) public
+    initializer {
         swapRouter = _swapRouter;
+        fee = _fee;
+        recipient = _recipient;
     }
 
     function swapMultipleTokens(
@@ -27,7 +34,7 @@ contract Swapper is Initializable {
                 "The sum of the percents cannot exceeds 100");
 
         uint amount = msg.value;
-        uint toCharge = amount * fee / 100;
+        uint toCharge = amount * fee / 1000;
         amount -= toCharge;
         _chargeFee(toCharge);
 
