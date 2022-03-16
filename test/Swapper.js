@@ -70,6 +70,17 @@ describe("Swapper", ()=> {
       .revertedWith("Arguments arrays must have equal size");
     });
 
+    it("Should not allow to swap tokens if the sum of the specified percents exceeds 100%", async()=> {
+      await expect(swapper.swapMultipleTokens(
+        [LINK_ADDRESS, DAI_ADDRESS],
+        [50, 70],
+        [PriceInLink, PriceInDai]
+      ))
+      .to
+      .be
+      .revertedWith("The sum of the percents cannot exceeds 100");
+    })
+
     xit("Should allow to swap all the tokens", async ()=> {
       let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
       let prices = [PriceInDai, PriceInLink, PriceInUni];
