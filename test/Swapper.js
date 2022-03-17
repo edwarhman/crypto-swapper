@@ -1,17 +1,24 @@
 const {expect} = require('chai');
 const provider = waffle.provider;
+const { ParaSwap } = require('paraswap');
+const paraSwap = new ParaSwap();
 
 describe("Swapper", ()=> {
   let Swapper,
       swapper,
+      SwapperV2,
+      swapperV2,
       router,
+      augustus,
       dai,
       owner,
       user;
 
   // router address
   const UNISWAP_ROUTER = "0xf164fC0Ec4E93095b804a4795bBe1e041497b92a";
+  const AUGUSTUS_SWAPPER = "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57";
   // token addresses
+  const ETH_ADDRESS = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
   const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
   const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
   const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
@@ -19,22 +26,31 @@ describe("Swapper", ()=> {
   let PriceInDai = ethers.utils.parseEther("2400");
   let PriceInLink = ethers.utils.parseEther("150");
   let PriceInUni = ethers.utils.parseEther("200");
-
+  // impersonate account
+  const IMPERSONATE = "0xFC2f592ed0e0447c6c0E75350940fc069c2BA1E6";
 
   before(async ()=> {
-    Swapper = await ethers.getContractFactory("SwapperTest"); 
+    Swapper = await ethers.getContractFactory("SwapperTest");
+    SwapperV2 = await ethers.getContractFactory("SwapperTestV2"); 
     router = await ethers.getContractAt("IUniswapV2Router01", UNISWAP_ROUTER);
+    augustus = await ethers.getContractAt("IParaswap", AUGUSTUS_SWAPPER);
     dai = await ethers.getContractAt("IERC20", DAI_ADDRESS);
     link = await ethers.getContractAt("IERC20", LINK_ADDRESS);
     uni = await ethers.getContractAt("IERC20", UNI_ADDRESS);
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [IMPERSONATE],
+    });
   });
 
   beforeEach(async ()=> {
     [owner, user] = await ethers.getSigners();
     swapper = await upgrades.deployProxy(Swapper, [router.address, 1, user.address]);
+    // swapperV2 = await upgrades.upgradeProxy(swapper.address, SwapperV2);
   });
 
-  describe("Deployment", ()=> {
+  xdescribe("Deployment", ()=> {
     it("Should be initialized correctly", async ()=> {
       expect(await swapper.swapRouter())
       .to
@@ -42,7 +58,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  describe("Private functions assertions", ()=>{
+  xdescribe("Private functions assertions", ()=>{
     let ethSent = ethers.utils.parseEther("1");
     let minTokenExpected = ethers.utils.parseEther("2300");
 
@@ -65,7 +81,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  describe("swapMultipleTokens assertions", ()=> {
+  xdescribe("swapMultipleTokens assertions", ()=> {
     let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
     let prices = [PriceInDai, PriceInLink, PriceInUni];
     let percents = [20, 50, 30];
@@ -141,7 +157,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  describe("Set fee and recipient assertions", ()=> {
+  xdescribe("Set fee and recipient assertions", ()=> {
     it("Should allow only the admin to set the fee", async()=> {
       await expect(swapper.connect(user).setFee(20))
       .to
@@ -167,6 +183,46 @@ describe("Swapper", ()=> {
       .to
       .equal(owner.address);
     });
+  })
+
+  describe("Version 2 assertions", ()=> {
+    const anEther = ethers.utils.parseEther("1");
+    let priceRoute;
+    let signer;
+    beforeEach(async ()=> {
+      swapperV2 = await upgrades.upgradeProxy(swapper.address, SwapperV2);
+      await swapperV2.setParaswapRouter(augustus.address);
+
+      priceRoute = await paraSwap.getRate(
+        ETH_ADDRESS,
+        DAI_ADDRESS,
+        anEther,
+      );
+
+      signer = await ethers.getSigner(IMPERSONATE);
+    })
+
+    it("swap tokens using best dex", async ()=> {
+      const txParams = await paraSwap.buildTx(
+        ETH_ADDRESS,
+        DAI_ADDRESS,
+        priceRoute.srcAmount,
+        priceRoute.destAmount,
+        priceRoute,
+        IMPERSONATE
+      )
+      console.log(txParams);
+      console.log(owner.address);
+      console.log(await dai.balanceOf(signer.address));
+      let tx = await swapperV2.connect(signer).bestDexSwapETHForTokens(
+        txParams.data,
+        txParams.value,
+        {value: anEther}
+      );
+      await tx.wait();
+      console.log(await dai.balanceOf(signer.address));
+      // await augustus.connect(signer).simpleSwap(txParams, {value: anEther});
+    })
   })
 
 });
