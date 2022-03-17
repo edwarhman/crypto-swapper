@@ -30,18 +30,19 @@ describe("Swapper", ()=> {
   const IMPERSONATE = "0xFC2f592ed0e0447c6c0E75350940fc069c2BA1E6";
 
   before(async ()=> {
-    Swapper = await ethers.getContractFactory("SwapperTest");
-    SwapperV2 = await ethers.getContractFactory("SwapperTestV2"); 
-    router = await ethers.getContractAt("IUniswapV2Router01", UNISWAP_ROUTER);
-    augustus = await ethers.getContractAt("IParaswap", AUGUSTUS_SWAPPER);
-    dai = await ethers.getContractAt("IERC20", DAI_ADDRESS);
-    link = await ethers.getContractAt("IERC20", LINK_ADDRESS);
-    uni = await ethers.getContractAt("IERC20", UNI_ADDRESS);
-
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [IMPERSONATE],
     });
+
+    Swapper = await ethers.getContractFactory("SwapperTest");
+    SwapperV2 = await ethers.getContractFactory("SwapperTestV2"); 
+    dai = await ethers.getContractAt("IERC20", DAI_ADDRESS);
+    link = await ethers.getContractAt("IERC20", LINK_ADDRESS);
+    uni = await ethers.getContractAt("IERC20", UNI_ADDRESS);
+    router = await ethers.getContractAt("IUniswapV2Router01", UNISWAP_ROUTER);
+    augustus = await ethers.getContractAt("IParaswap", AUGUSTUS_SWAPPER);
+
   });
 
   beforeEach(async ()=> {
@@ -211,8 +212,10 @@ describe("Swapper", ()=> {
         priceRoute,
         IMPERSONATE
       )
+
       console.log(txParams);
       console.log(owner.address);
+      console.log(await provider.getBalance(signer.address));
       console.log(await dai.balanceOf(signer.address));
       let tx = await swapperV2.connect(signer).bestDexSwapETHForTokens(
         txParams.data,
@@ -220,7 +223,9 @@ describe("Swapper", ()=> {
         {value: anEther}
       );
       await tx.wait();
+      console.log(await provider.getBalance(signer.address));
       console.log(await dai.balanceOf(signer.address));
+      console.log(await dai.balanceOf(swapperV2.address));
       // await augustus.connect(signer).simpleSwap(txParams, {value: anEther});
     })
   })

@@ -1,8 +1,7 @@
 pragma solidity ^0.8.0;
 
 import "./Swapper.sol";
-import "./interfaces/IParaswap.sol";
-import "./interfaces/Utils.sol";
+
 
 ///@title Crypto Swapper
 ///@author Emerson Warhman
@@ -17,7 +16,7 @@ contract SwapperV2 is Initializable, AccessControlUpgradeable {
     address public recipient;
     ///@notice Role required to manipulate admin functions
     bytes32 public constant ADMIN = keccak256("ADMIN");
-    IParaswap public paraswapRouter;
+    address public paraswapRouter;
 
     ///@notice Event emitted when a swap is done successfuly
     ///@param ethAmount amount of ETH sent in the transaction
@@ -154,26 +153,26 @@ contract SwapperV2 is Initializable, AccessControlUpgradeable {
         bytes memory data,
         uint srcAmount
     ) internal {
-        uint256 received;
+        string memory received;
         console.log("bestDexSwap starts");
-        (bool success, bytes memory result) = address(paraswapRouter).call{value: srcAmount}(data);
-        if(!success) {
-            uint l = result.length;
-            if(l < 68) {
-                revert("Function reverted without error messages");
-            }
-            assembly {
-                result := add(result, 0x04)
-            }
-            revert(abi.decode(result, (string)));
-        }
+        (bool success, bytes memory result) = paraswapRouter.call{value: srcAmount}(data);
+        // if(!success) {
+        //     uint l = result.length;
+        //     if(l < 68) {
+        //         revert("Function reverted without error messages");
+        //     }
+        //     assembly {
+        //         result := add(result, 0x04)
+        //     }
+        //     revert(abi.decode(result, (string)));
+        // }
         console.log(success);
-        //received = abi.decode(result, (uint256));
-        console.log(received);
+        // received = abi.decode(result, (string));
+        console.log(result);
     }
 
     function setParaswapRouter(
-        IParaswap _paraswapRouter
+        address _paraswapRouter
     ) external {
         paraswapRouter = _paraswapRouter;
     }
