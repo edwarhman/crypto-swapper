@@ -2,6 +2,7 @@ require("@nomiclabs/hardhat-waffle");
 require('@openzeppelin/hardhat-upgrades');
 require("dotenv").config();
 require("solidity-coverage");
+require("hardhat-gas-reporter");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -27,5 +28,15 @@ module.exports = {
       }
     }
   },
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [
+      {
+        version: "0.7.5",
+      },
+      {
+        version: "0.8.12",
+        settings: {},
+      },
+    ],
+  },
 };
