@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 
 import "./Swapper.sol";
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 ///@title Crypto Swapper
 ///@author Emerson Warhman
@@ -149,26 +149,35 @@ contract SwapperV2 is Initializable, AccessControlUpgradeable {
         require(fe, "ETH was not sent to recipient");
     }
 
-    function _bestDexSwapETHForTokens(
-        bytes memory data,
-        uint srcAmount
-    ) internal {
-        string memory received;
+    function bestDexSwapETHForTokens(
+        bytes[] memory data,
+        IERC20[] calldata tokens 
+    ) external
+    payable {
+        require(data.length == tokens.length, "Arguments arrays must have equal size");
+        uint received;
         console.log("bestDexSwap starts");
-        (bool success, bytes memory result) = paraswapRouter.call{value: srcAmount}(data);
-        // if(!success) {
-        //     uint l = result.length;
-        //     if(l < 68) {
-        //         revert("Function reverted without error messages");
-        //     }
-        //     assembly {
-        //         result := add(result, 0x04)
-        //     }
-        //     revert(abi.decode(result, (string)));
-        // }
-        console.log(success);
-        // received = abi.decode(result, (string));
-        console.log(result);
+        for(uint i = 0; i < data.length; i++) {
+            (bool success, bytes memory result) = paraswapRouter.call{value: msg.value}(data[i]);
+            if(!success) {
+                uint l = result.length;
+                if(l < 68) {
+                    revert("Function reverted without error messages");
+                }
+                assembly {
+                    result := add(result, 0x04)
+                }
+                revert(abi.decode(result, (string)));
+            }
+            console.log(success);
+            received = abi.decode(result, (uint));
+
+            uint toCharge = received * fee / 1000;
+
+            tokens[i].transfer(recipient, toCharge);
+
+            tokens[i].transfer(msg.sender, received - toCharge);
+        }
     }
 
     function setParaswapRouter(
@@ -176,5 +185,6 @@ contract SwapperV2 is Initializable, AccessControlUpgradeable {
     ) external {
         paraswapRouter = _paraswapRouter;
     }
+
 }
  
