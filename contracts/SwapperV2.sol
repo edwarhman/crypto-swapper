@@ -149,6 +149,9 @@ contract SwapperV2 is Initializable, AccessControlUpgradeable {
         require(fe, "ETH was not sent to recipient");
     }
 
+    ///@notice swap ether for multiple tokens using the best DEX in paraswap
+    ///@param data Collection of necessary data used by paraswapRouter to do the swaps
+    ///@param tokens list of tokens receive in the swap
     function bestDexSwapETHForTokens(
         bytes[] memory data,
         IERC20[] calldata tokens 
@@ -180,9 +183,11 @@ contract SwapperV2 is Initializable, AccessControlUpgradeable {
         }
     }
 
-    function setParaswapRouter(
+    ///@notice let to set the paraswap router
+    ///@param _paraswapRouter The new router to use in the contract
+    function setParaswapRouter (
         address _paraswapRouter
-    ) external {
+    ) external onlyRole(ADMIN) {
         paraswapRouter = _paraswapRouter;
     }
 

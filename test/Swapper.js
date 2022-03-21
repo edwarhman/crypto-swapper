@@ -56,7 +56,7 @@ describe("Swapper", ()=> {
     // swapperV2 = await upgrades.upgradeProxy(swapper.address, SwapperV2);
   });
 
-  xdescribe("Deployment", ()=> {
+  describe("Deployment", ()=> {
     it("Should be initialized correctly", async ()=> {
       expect(await swapper.swapRouter())
       .to
@@ -64,7 +64,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  xdescribe("Private functions assertions", ()=>{
+  describe("Private functions assertions", ()=>{
     let ethSent = ethers.utils.parseEther("1");
     let minTokenExpected = ethers.utils.parseEther("2300");
 
@@ -87,7 +87,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  xdescribe("swapMultipleTokens assertions", ()=> {
+  describe("swapMultipleTokens assertions", ()=> {
     let addresses = [DAI_ADDRESS, LINK_ADDRESS, UNI_ADDRESS];
     let prices = [PriceInDai, PriceInLink, PriceInUni];
     let percents = [20, 50, 30];
@@ -163,7 +163,7 @@ describe("Swapper", ()=> {
     });
   });
 
-  xdescribe("Set fee and recipient assertions", ()=> {
+  describe("Set fee and recipient assertions", ()=> {
     it("Should allow only the admin to set the fee", async()=> {
       await expect(swapper.connect(user).setFee(20))
       .to
@@ -219,7 +219,7 @@ describe("Swapper", ()=> {
 
     it("swap tokens using uniswap best dex", async ()=> {
 
-      const initialBalance = dai.balanceOf(IMPERSONATE.address);
+      const initialBalance = dai.balanceOf(signer.address);
       const destAmount = ethers.BigNumber.from(priceRoute.destAmount).div(2).toString();
 
       const txParams = await paraSwap.buildTx(
@@ -242,6 +242,8 @@ describe("Swapper", ()=> {
 
       console.log(txParams);
 
+      console.log(await provider.getBalance(signer.address));
+
       let tx = await swapperV2.connect(signer).bestDexSwapETHForTokens(
         [txParams.data],
         [DAI_ADDRESS],
@@ -249,7 +251,7 @@ describe("Swapper", ()=> {
       );
       await tx.wait();
 
-      expect(await dai.balanceOf(IMPERSONATE.address))
+      expect(await dai.balanceOf(signer.address))
       .to
       .above(initialBalance);
       
