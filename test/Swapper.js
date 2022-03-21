@@ -1,7 +1,11 @@
 const {expect} = require('chai');
 const provider = waffle.provider;
 const { ParaSwap } = require('paraswap');
+const { SwapSide } = require("paraswap-core");
+
 const paraSwap = new ParaSwap();
+const partner = "paraswap";
+const apiURL = "https://apiv5.paraswap.io";
 
 describe("Swapper", ()=> {
   let Swapper,
@@ -22,6 +26,7 @@ describe("Swapper", ()=> {
   const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
   const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
   const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
+  const TOKENS_DECIMALS = 18;
   // ether prices in different tokens
   let PriceInDai = ethers.utils.parseEther("2400");
   let PriceInLink = ethers.utils.parseEther("150");
@@ -36,7 +41,7 @@ describe("Swapper", ()=> {
     });
 
     Swapper = await ethers.getContractFactory("SwapperTest");
-    SwapperV2 = await ethers.getContractFactory("SwapperTestV2"); 
+    SwapperV2 = await ethers.getContractFactory("SwapperV2"); 
     dai = await ethers.getContractAt("IERC20", DAI_ADDRESS);
     link = await ethers.getContractAt("IERC20", LINK_ADDRESS);
     uni = await ethers.getContractAt("IERC20", UNI_ADDRESS);
@@ -198,36 +203,58 @@ describe("Swapper", ()=> {
         ETH_ADDRESS,
         DAI_ADDRESS,
         anEther,
+        swapperV2.address,
+        SwapSide.SELL,
+        { partner },
+        TOKENS_DECIMALS,
+        TOKENS_DECIMALS
       );
-
+      console.log(priceRoute);
       signer = await ethers.getSigner(IMPERSONATE);
-    })
 
-    it("swap tokens using best dex", async ()=> {
+      if ("message" in priceRoute) {
+        throw new Error(priceRoute.message);
+      }
+    });
+
+    it("swap tokens using uniswap best dex", async ()=> {
+
+      const initialBalance = dai.balanceOf(IMPERSONATE.address);
+      const destAmount = ethers.BigNumber.from(priceRoute.destAmount).div(2).toString();
+
       const txParams = await paraSwap.buildTx(
         ETH_ADDRESS,
         DAI_ADDRESS,
         priceRoute.srcAmount,
-        priceRoute.destAmount,
+        destAmount,
         priceRoute,
-        IMPERSONATE
+        swapperV2.address,
+        partner,
+        undefined,
+        undefined,
+        swapperV2.address,
+        {ignoreChecks: true}
       )
 
+      if ("message" in txParams) {
+        throw new Error(txParams.message);
+      }
+
       console.log(txParams);
-      console.log(owner.address);
-      console.log(await provider.getBalance(signer.address));
-      console.log(await dai.balanceOf(signer.address));
+
       let tx = await swapperV2.connect(signer).bestDexSwapETHForTokens(
-        txParams.data,
-        txParams.value,
+        [txParams.data],
+        [DAI_ADDRESS],
         {value: anEther}
       );
       await tx.wait();
-      console.log(await provider.getBalance(signer.address));
-      console.log(await dai.balanceOf(signer.address));
-      console.log(await dai.balanceOf(swapperV2.address));
+
+      expect(await dai.balanceOf(IMPERSONATE.address))
+      .to
+      .above(initialBalance);
+      
       // await augustus.connect(signer).simpleSwap(txParams, {value: anEther});
-    })
-  })
+    });
+  });
 
 });
